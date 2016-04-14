@@ -1,0 +1,406 @@
+Scala School
+Intro to Scala, Part 1
+Tags: scala
+
+Dave Pederson
+Social Finance, Inc.
+dpederson@sofi.org
+https://github.com/zdavep/scala-school-1
+@zdavep
+
+
+* About this presentation
+
+Will cover basic syntax and concepts.
+
+Having an interpreter (REPL) available makes it easy to explore a problem space.
+
+Concepts taken and adapted to Scala 2.11 from:
+
+https://twitter.github.io/scala_school/basics.html
+
+
+* Agenda
+
+- Why Scala?
+- Getting Scala
+- Expressions
+- Values
+- Variables
+- Functions
+- Classes
+- Inheritance
+- Traits
+- Types
+
+
+* Why Scala?
+
+- Expressive
+  First-class functions and closures
+- Concise
+  Type inference and literal syntax for function creation
+- Interoperability
+  Can reuse Java libraries and tools with no performance penalty
+
+Scala is not just a terse version of Java though. Think of it as a separate language.
+
+
+* Getting Scala
+
+  $ brew install scala
+
+Start the REPL (interpreter)
+
+  $ scala
+
+  Welcome to Scala 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_77).
+  Type in expressions for evaluation. Or try :help.
+
+  scala>
+
+
+* Expressions
+
+  scala> 1 + 1
+  res0: Int = 2
+
+res0 is an automatically created value name given by the interpreter to the result of the expression.
+
+It has a type of `Int` and contains the value 2.
+
+Almost everything in Scala is an expression.
+
+
+* Values
+
+The result of an expression can be given a name.
+
+  scala> val two = 1 + 1
+  two: Int = 2
+
+Values are immutable, meaning the binding cannot be changed.
+
+  scala> two = 3
+  <console>:12: error: reassignment to val
+       two = 3
+           ^
+
+* Variables
+
+If required, the binding can be changed. Use a var instead.
+
+  scala> var name = "Dave"
+  name: String = Dave
+
+  scala> name = "Matt"
+  name: String = Matt
+
+  scala> name = "Ty"
+  name: String = Ty
+
+Vars are usually discouraged, but can be useful in certain situations.
+
+
+* Functions
+
+Functions are created with def.
+
+  scala> def increment(n: Int): Int = n + 1
+  increment: (n: Int)Int
+
+Params types must be specified. The interpreter will print the signature back.
+
+  scala> val three = increment(2)
+  three: Int = 3
+
+Parens can be left off for functions with no arguments.
+
+  scala> def three() = 1 + 2
+  three: ()Int
+
+  scala> three
+  res1: Int = 3
+
+  scala> three()
+  res2: Int = 3
+
+
+* Functions (cont)
+
+Anonymous functions are also supported:
+
+  scala> (x: Int) => x + 1
+  res3: Int => Int = <function1>
+
+Adds 1 to an Int named x
+
+  scala> res3(1)
+  res4: Int = 2
+
+Anonymous functions can be passed around or saved into vals.
+
+  scala> val increment = (x: Int) => x + 1
+  increment: Int => Int = <function1>
+
+  scala> increment(1)
+  res5: Int = 2
+
+
+* Functions (cont)
+
+If a function is made up of many expressions, braces can be used to provide some "breathing room."
+
+  scala> def timesTwo(i: Int): Int = {
+       |   println("timesTwo")
+       |   i * 2
+       | }
+  timesTwo: (i: Int)Int
+
+This is also true of an anonymous function.
+
+  scala> { i: Int =>
+       |   println("timesTwo")
+       |   i * 2
+       | }
+  res6: Int => Int = <function1>
+
+This syntax is often used when passing an anonymous function as an argument.
+
+
+* Functions (cont)
+
+Functions can be partially applied with an underscore, which yields another function.
+
+Scala uses the underscore to mean different things in different contexts, but it is usually used as a unnamed magical wildcard.
+
+  scala> def adder(m: Int, n: Int): Int = m + n
+  adder: (m: Int, n: Int)Int
+
+In the context of { _ + 2 } it means an unnamed parameter:
+
+  scala> val add2 = adder(2, _:Int)
+  add2: Int => Int = <function1>
+
+  scala> add2(3)
+  res7: Int = 5
+
+
+* Functions (cont)
+
+Sometimes it makes sense to apply some arguments to a function now and others later. This is called a curried function. So, given:
+
+  scala> def multiply(m: Int)(n: Int): Int = m * n
+  multiply: (m: Int)(n: Int)Int
+
+Fill in the first parameter and partially apply the second.
+
+  scala> val timesTwo = multiply(2) _
+  timesTwo: Int => Int = <function1>
+
+  scala> timesTwo(3)
+  res9: Int = 6
+
+ or, call it directly with both arguments.
+
+  scala> multiply(2)(3)
+  res8: Int = 6
+
+
+* Functions (cont)
+
+Scala support variable length arguments:
+
+  scala> def capitalizeStrings(args: String*) = {
+       |   args.map { arg =>
+       |     arg.capitalize
+       |   }
+       | }
+  capitalizeStrings: (args: String*)Seq[String]
+
+  scala> capitalizeStrings("simple", "country", "functions")
+  res10: Seq[String] = ArrayBuffer(Simple, Country, Functions)
+
+Aside: The above function can be shortened to:
+
+  scala> def capitalizeStrings(args: String*) = args.map(_.capitalize)
+  capitalizeStrings: (args: String*)Seq[String]
+
+
+* Classes
+
+Very similar to Java:
+
+  scala> class Calculator {
+       |   val brand: String = "TI"
+       |   def add(m: Int, n: Int): Int = m + n
+       | }
+  defined class Calculator
+
+  scala> val calc = new Calculator
+  calc: Calculator = Calculator@24b1d79b
+
+  scala> calc.add(1, 2)
+  res11: Int = 3
+
+  scala> calc.brand
+  res12: String = TI
+
+This example defines a method with def and a field with val. Methods are just functions that can access the state of the class.
+
+
+* Constructor
+
+Constructors aren't special methods, they are listed in the class definition.
+
+  scala> class Calculator(brand: String) {
+       |   val color: String = if (brand == "TI") {
+       |     "blue"
+       |   } else if (brand == "HP") {
+       |     "black"
+       |   } else {
+       |     "white"
+       |   }
+       |   def add(m: Int, n: Int): Int = m + n
+       | }
+  defined class Calculator
+
+  scala> val calc = new Calculator("HP")
+  calc: Calculator = Calculator@197d671
+
+  scala> calc.color
+  res13: String = black
+
+Note how *color* is expression-oriented. It was bound based on the result of an if/else expression.
+
+
+* Inheritance
+
+Like Java, use extends. Note how *brand* is passed to the parent class.
+
+  scala> class ScientificCalculator(brand: String) extends Calculator(brand) {
+       |   def log(m: Double, base: Double) = math.log(m) / math.log(base)
+       | }
+  defined class ScientificCalculator
+
+Aside: Type aliases are better than using extends if the subclass isn't actually different from the superclass.
+
+Overloading methods
+
+  scala> class EvenMoreScientificCalculator(brand: String) extends ScientificCalculator(brand) {
+       |   def log(m: Int): Double = log(m, math.exp(1))
+       | }
+  defined class EvenMoreScientificCalculator
+
+
+* Abstract Classes
+
+Define methods without implementing them. Subclasses that extend the abstract class must implement these methods.
+
+  scala> abstract class Shape {
+       |   def area(): Int
+       | }
+  defined class Shape
+
+  scala> class Circle(r: Int) extends Shape {
+       |   def area(): Int = r * r * 3
+       | }
+  defined class Circle
+
+Abstract classes can't be instantiated:
+
+  scala> val s = new Shape
+  <console>:12: error: class Shape is abstract; cannot be instantiated
+         val s = new Shape
+                 ^
+
+  scala> val c = new Circle(2)
+  c: Circle = Circle@4909b8da
+
+
+* Traits
+
+Collections of fields and behaviors that you can mixin to your classes.
+
+  scala> trait Car {
+       |   val brand: String
+       | }
+  defined trait Car
+
+  scala> trait Shiny {
+       |   val refraction: Int
+       | }
+  defined trait Shiny
+
+Traits are mixed in using the extends keyword:
+
+  scala> class Chevy extends Car {
+       |   val brand: String = "Chevy"
+       | }
+  defined class Chevy
+
+
+* Traits (cont)
+
+Multiple traits are mixed in using extends-with:
+
+  scala> class Camaro extends Car with Shiny {
+       |   val brand: String = "Chevy"
+       |   val refraction: Int = 10
+       | }
+  defined class Camero
+
+Aside: Camaro _could_ also be defined as:
+
+  scala> class Camaro extends Chevy with Shiny {
+       |   val refraction: Int = 10
+       | }
+  defined class Camaro
+
+
+* Traits (cont)
+
+When should a *Trait* be used instead of an *Abstract* *Class*?
+
+When defining an interface-like type, it might seem difficult to choose between a trait or an abstract class. Both define a type with some behavior, asking extenders to implement.
+
+General guidelines:
+
+- When in doubt, favor using traits. A class can extend several traits. A class can *ONLY* extend one abstract class.
+- If a constructor parameter is required, use an abstract class. Abstract class constructors can take parameters. Trait constructors can't.
+
+
+* Generic Types
+
+Earlier, functions were defined that took a specific type Int. Functions can also be generic and work on any type. Type parameters are defined within square brackets.
+
+Here's an example with generic keys and values.
+
+  scala> trait Cache[K, V] {
+       |   def put(k: K, v: V): Boolean
+       |   def get(k: K): V
+       |   def del(k: K): V
+       | }
+  defined trait Cache
+
+Aside: Generic types can be introduced on methods too:
+
+  scala> trait CopyCache[K, V] extends Cache[K, V] {
+       |   def copy[A](f: V => A): Cache[K, A]
+       | }
+  defined trait CopyCache
+
+The _copy_ method is defined with the generic type *A*. This method will create a new cache, applying a function that converts values of type *V* to type *A*.
+
+
+* Questions?
+
+Tentative agenda for Part 2:
+
+- Case Classes
+- Objects
+- Packages
+- Apply
+- Update
+- Uniform Access Principle
+- Pattern Matching
