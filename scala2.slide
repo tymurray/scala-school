@@ -1,0 +1,316 @@
+Scala School
+Intro to Scala, Part 2
+Tags: scala
+
+Dave Pederson
+Social Finance, Inc.
+dpederson@sofi.org
+https://github.com/zdavep/scala-school
+@zdavep
+
+
+* About this presentation
+
+Will cover more basic syntax and concepts.
+
+The REPL will again be used for most examples. Introduce :paste for some.
+
+Concept taken and adapted to Scala 2.11 from:
+
+https://twitter.github.io/scala_school/basics2.html
+
+
+* Agenga
+
+- Apply
+- Objects
+- Functions as Objects
+- Packages
+- Pattern Matching
+- Case Classes
+- Exceptions
+
+
+* Apply
+
+Apply methods provide syntactic sugar for when a class or object has one main use.
+
+  scala> class Foo {}
+  defined class Foo
+
+  scala> object FooMaker {
+       |   def apply() = new Foo
+       | }
+  defined object FooMaker
+
+  scala> val newFoo = FooMaker()
+  newFoo: Foo = Foo@383534aa
+
+
+* Apply (cont)
+
+Apply can also be used to make it look like we're calling a method.
+
+  scala> class Bar {
+       |   def apply() = 0
+       | }
+  defined class Bar
+
+  scala> val bar = new Bar
+  bar: Bar = Bar@17ed40e0
+
+  scala> bar()
+  res0: Int = 0
+
+This will make more sense later.
+
+
+* Objects
+
+Objects are used to hold single instances of a class.
+
+  scala> object Counter {
+       |   var count = 0
+       |   def inc() = synchronized {
+       |     count += 1
+       |     count
+       |   }
+       | }
+  defined object Counter
+
+  scala> Counter.inc()
+  res1: Int = 1
+
+  scala> Counter.inc()
+  res2: Int = 2
+
+
+* Object (cont)
+
+Object are also often used as *Companion* *Objects* for classes.  Companion Objects are often used as factories.
+
+  scala> :paste
+  // Entering paste mode (ctrl-D to finish)
+
+  class Bar(foo: String)
+
+  object Bar {
+    def apply(foo: String) = new Bar(foo)
+  }
+
+
+  // Exiting paste mode, now interpreting.
+
+  defined class Bar
+  defined object Bar
+
+Aside: Paste mode is useful when testing snippets from an existing code base in the REPL.
+
+
+* Functions as Objects
+
+What is a function in Scala?
+
+Functions are just traits. For example, the *Function1* trait takes one parameter and defines _apply()_, allowing function-like calls.
+
+The syntactic sugar helps unify the duality of object and functional programming. Classes can be passed around and used as functions. Functions are just instances.
+
+Does this mean that every time a method is defined in a class, a *FunctionN* instance is created?  Nope, methods in classes are just methods.
+
+
+* Functions as Objects (cont)
+
+Example: classes can extend *Function*. Instances can then be called with ().
+
+  scala> class Inc extends Function1[Int, Int] {
+       |   def apply(n: Int): Int = n + 1
+       | }
+  defined class Inc
+
+  scala> val inc = new Inc
+  inc: Inc = <function1>
+
+  scala> inc(12)
+  res3: Int = 13
+
+Aside: A short-hand way to write the *Inc* class is:
+
+  scala> class Inc extends (Int => Int) {
+       |   def apply(n: Int): Int = n + 1
+       | }
+  defined class Inc
+
+
+* Packages
+
+Like Java, code is organized inside of packages.
+
+  package com.sofi.foo
+
+However, packages in Scala can be split across multiple lines:
+
+  package com.sofi
+  package foo
+
+This allows for relative access. For example, given another package:
+
+  package com.sofi.util
+
+The foo package can access the _time()_ function with:
+
+  util.time()
+
+instead of accessing it using the global namespace:
+
+  com.sofi.util.time()
+
+
+* Pattern Matching
+
+Considered by many to be one of the most useful parts of Scala. Can match on values:
+
+  scala> val count = 2
+  count: Int = 2
+
+  scala> count match {
+       |   case 1 => "one"
+       |   case 2 => "two"
+       |   case _ => "other"
+       | }
+  res4: String = two
+
+Can also match with guards:
+
+  scala> count match {
+       |   case i if i % 2 == 0 => "even"
+       |   case _ => "odd"
+       | }
+  res5: String = even
+
+Note the use of the magical Scala wildcard. Without this, a runtime error will occur on a unmatched value.
+
+
+* Pattern Matching (cont)
+
+Matching can be used to handle different types (bad example):
+
+  scala> :paste
+  // Entering paste mode (ctrl-D to finish)
+
+  def bigger(o: Any): Any = {
+    o match {
+      case i: Int if i < 0 => i - 1
+      case i: Int => i + 1
+      case d: Double if d < 0.0 => d - 0.1
+      case d: Double => d + 0.1
+      case text: String => text + "s"
+    }
+  }
+
+  // Exiting paste mode, now interpreting.
+
+  bigger: (o: Any)Any
+
+  scala> bigger(10)
+  res7 Any = 11
+
+
+* Pattern Matching (cont)
+
+Can match on class memeber types. Using the *Calculator* example from Part 1:
+
+  scala> :paste
+  // Entering paste mode (ctrl-D to finish)
+
+  def calcType(calc: Calculator) = calc match {
+    case _ if calc.brand == "hp" && calc.model == "20B" => "financial"
+    case _ if calc.brand == "hp" && calc.model == "48G" => "scientific"
+    case _ if calc.brand == "hp" && calc.model == "30B" => "business"
+    case _ => "unknown"
+  }
+
+  // Exiting paste mode, now interpreting.
+
+  calcType: (calc: Calculator)String
+
+Wow, that sucks! Luckily, there is a better way to do this.
+
+
+* Case Classes
+
+The best way to store and match on the contents of a class. Can be constructed without new.
+
+  scala> case class Calculator(brand: String, model: String)
+  defined class Calculator
+
+  scala> val hp20b = Calculator("hp", "20b")
+  hp20b: Calculator = Calculator(hp,20b)
+
+Automatically have equality and toString methods based on values.
+
+  scala> val hp20B = Calculator("hp", "20b")
+  hp20B: Calculator = Calculator(hp,20b)
+
+  scala> hp20b == hp20B
+  res7: Boolean = true
+
+Aside: case classes can have methods just like normal classes.
+
+
+* Case Classes (cont)
+
+Designed to be used with pattern matching. For example, a cleaner _calcType_:
+
+  scala> :paste
+  // Entering paste mode (ctrl-D to finish)
+
+  def calcType(calc: Calculator) = calc match {
+    case Calculator("hp", "20B") => "financial"
+    case Calculator("hp", "48G") => "scientific"
+    case Calculator("hp", "30B") => "business"
+    case _ => "unknown"
+  }
+
+  // Exiting paste mode, now interpreting.
+
+  calcType: (calc: Calculator)String
+
+  scala> calcType(hp20b)
+  res8: String = financial
+
+
+* Exceptions
+
+Exceptions are available in Scala using the try-catch-finally syntax with pattern matching.
+
+  try {
+    remoteService.foo(1, "bar")
+  } catch {
+    case e: ServerIsDownException => log.error(e, "the remote service is unavailable")
+  } finally {
+    remoteService.close()
+  }
+
+Opinion: Exceptions are not the best way to handle errors in Scala. See the disjunction types:
+
+- Either - Scala Standard lib
+- Xor - Cats (3rd party lib)
+- \/ - ScalaZ (3rd party lib)
+
+
+* Questions?
+
+Tentative agenda for Part 3
+
+_Collections_
+
+- Lists
+- Maps
+
+_Functional_ _Combinators_
+
+- map
+- fold
+- filter
+- zip
+- foreach
